@@ -41,9 +41,7 @@ Facial expression recognition (FER) remains a challenging task due to label ambi
 - [FERPlus](https://www.microsoft.com/en-us/research/project/ferplus-dataset/)
 
 ### 2. Prepare Pretrained Weights  
-Place the model weights in the 
-RAF-DB : https://drive.google.com/file/d/12NY75DwMUnXFbRYDQso4eXIxLAV2PP63/view?usp=drive_link
-ResNet18 : https://drive.google.com/file/d/1Qlt2qzgi7N_0fCuTz6rki2SQyl14oITi/view?usp=drive_link
+Place the model weights in the https://drive.google.com/file/d/12NY75DwMUnXFbRYDQso4eXIxLAV2PP63/view?usp=drive_link
 ### 3. Set Paths  
 In `main.py`, update the following:
 ```python
