@@ -25,11 +25,8 @@ Facial expression recognition (FER) remains a challenging task due to label ambi
 ### Comparison with other methods on AffectNet  
 ![Image](https://github.com/user-attachments/assets/ca4b0e87-049d-466a-96fa-c64a53ea4802)
 
-### Overall accuracy under different noise ratios  
-![Image](https://github.com/user-attachments/assets/02e57334-7b60-49af-b0fa-e05041dea154)
-
-### Performance under different imbalance settings on RAF-DB  
-![Image](https://github.com/user-attachments/assets/4b899466-0383-4a35-881e-4ac5285d8b97)
+### Evaluation of overall accuracy across different noise ratios and class imbalance conditions
+![Image](<img width="918" alt="Image" src="https://github.com/user-attachments/assets/02e0e0e7-6a5e-41bd-9a40-16301da7b37c" />)
 
 ---
 
