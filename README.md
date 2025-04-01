@@ -1,7 +1,8 @@
 # Navigating Label Ambiguity for Facial Expression Recognition in the Wild (AAAI 2025)
 
 This is the official repository for the paper:  
-**"Navigating Label Ambiguity for Facial Expression Recognition in the Wild"**, accepted at AAAI 2025.
+**"Navigating Label Ambiguity for Facial Expression Recognition in the Wild"**, accepted at **AAAI 2025**.  
+📄 [Paper on arXiv](https://arxiv.org/abs/2502.09993)
 
 ---
 
@@ -19,16 +20,16 @@ Facial expression recognition (FER) remains a challenging task due to label ambi
 
 ## Results
 
-### ✅ Comparison with other methods on RAF-DB  
+### Comparison with other methods on RAF-DB  
 ![RAF-DB](https://github.com/user-attachments/assets/0626b641-16cd-4da2-87d4-b26714112571)
 
-### ✅ Comparison with other methods on AffectNet  
+### Comparison with other methods on AffectNet  
 ![AffectNet](https://github.com/user-attachments/assets/930c9334-3f32-435e-80ad-6a4b806d05a2)
 
-### ✅ Overall accuracy under different noise ratios  
+### Overall accuracy under different noise ratios  
 ![Noise Robustness](https://github.com/user-attachments/assets/00d02915-a2fa-48d0-9ab3-0a5ef7daaf46)
 
-### ✅ Performance under different imbalance settings on RAF-DB  
+### Performance under different imbalance settings on RAF-DB  
 ![Imbalance Robustness](https://github.com/user-attachments/assets/b2987905-8f30-4c49-84bf-5d5a06a202b1)
 
 ---
@@ -41,7 +42,8 @@ Facial expression recognition (FER) remains a challenging task due to label ambi
 - [FERPlus](https://www.microsoft.com/en-us/research/project/ferplus-dataset/)
 
 ### 2. Prepare Pretrained Weights  
-Place the model weights in the https://drive.google.com/file/d/12NY75DwMUnXFbRYDQso4eXIxLAV2PP63/view?usp=drive_link
+Download from: [Google Drive](https://drive.google.com/file/d/12NY75DwMUnXFbRYDQso4eXIxLAV2PP63/view?usp=drive_link)
+
 ### 3. Set Paths  
 In `main.py`, update the following:
 ```python
