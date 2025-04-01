@@ -21,25 +21,25 @@ Extensive experiments demonstrate that NLA outperforms existing methods in both 
 
 ---
 
-## 🧩 Framework Overview
+## Framework Overview
 
-![NLA Framework]([https://github.com/user-attachments/assets/1df72df9-9c7d-404f-a95f-54b6b21990d8](https://github.com/user-attachments/assets/a1e549f0-dff8-40b8-ba90-dc14e04f57e9))
+![Image](https://github.com/user-attachments/assets/a1e549f0-dff8-40b8-ba90-dc14e04f57e9)
 
 ---
 
-## 📊 Results
+## Results
 
-### ✅ Comparison with other methods on RAF-DB  
-![RAF-DB](https://github.com/user-attachments/assets/0626b641-16cd-4da2-87d4-b26714112571)
+### Comparison with other methods on RAF-DB  
+![Image](https://github.com/user-attachments/assets/24b0f829-1cb6-4475-a928-0839f6579ebf)
 
-### ✅ Comparison with other methods on AffectNet  
-![AffectNet](https://github.com/user-attachments/assets/930c9334-3f32-435e-80ad-6a4b806d05a2)
+### Comparison with other methods on AffectNet  
+![Image](https://github.com/user-attachments/assets/ca4b0e87-049d-466a-96fa-c64a53ea4802)
 
-### ✅ Overall accuracy under different noise ratios  
-![Noise Robustness](https://github.com/user-attachments/assets/00d02915-a2fa-48d0-9ab3-0a5ef7daaf46)
+### Overall accuracy under different noise ratios  
+![Image](https://github.com/user-attachments/assets/02e57334-7b60-49af-b0fa-e05041dea154)
 
-### ✅ Performance under different imbalance settings on RAF-DB  
-![Imbalance Robustness](https://github.com/user-attachments/assets/b2987905-8f30-4c49-84bf-5d5a06a202b1)
+### Performance under different imbalance settings on RAF-DB  
+![Image](https://github.com/user-attachments/assets/4b899466-0383-4a35-881e-4ac5285d8b97)
 
 ---
 
