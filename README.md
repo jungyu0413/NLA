@@ -1,7 +1,7 @@
 # Navigating Label Ambiguity for Facial Expression Recognition in the Wild (AAAI 2025)
 
 This is the official repository for the paper:  
-[**"Navigating Label Ambiguity for Facial Expression Recognition in the Wild"**](https://arxiv.org/abs/2502.09993), accepted at **AAAI 2025**.
+[**"Navigating Label Ambiguity for Facial Expression Recognition in the Wild"**](https://arxiv.org/abs/2502.09993), published at **AAAI 2025**.
 
 ---
 
