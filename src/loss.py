@@ -41,23 +41,16 @@ class NAW(nn.Module):
     
     
     def co_gau(self, SV_flat, cov, mu):
-        diff = SV_flat - mu
+        diff = SV_flat - mu  # [2, N]
+        inv_cov = torch.linalg.inv(cov)  # [2, 2]
+        det_cov = torch.det(cov)  # scalar
         
-        # Inverse of the covariance matrix
-        inv_cov = torch.linalg.inv(cov)
-        
-        # Exponential term
-        exponent = -0.5 * torch.matmul(torch.matmul(diff.t(), inv_cov), diff)
-        
-        # Determinant of covariance matrix for normalization factor
-        det_cov = torch.det(cov)
-        
-        # Normalization factor
-        k = SV_flat.shape[0]  # Dimensionality
+        exponent = -0.5 * torch.sum(diff * (inv_cov @ diff), dim=0)
+    
+        k = SV_flat.shape[0]  
         norm_factor = 1.0 / torch.sqrt((2 * torch.tensor(math.pi)) ** k * det_cov)
-        
-        # Full Gaussian value
-        value = norm_factor * torch.exp(exponent)
+    
+        value = norm_factor * torch.exp(exponent)  
         return value
     
 
