@@ -173,16 +173,6 @@ footer a { color: inherit; }
     </div>
   </header>
 
-  <div class="deck teaser" style="margin-bottom: 28px">
-    <video src="static/video/teaser.mp4" poster="static/video/teaser.jpg" autoplay muted loop playsinline></video>
-    <p class="cap">Sample ambiguity from two scores. When a prediction is right, a clean sample has a ground-truth (GT) score far above its nearest negative (NN); an ambiguous one has the two scores close together. When it is wrong, a noisy sample puts the NN far above the GT.</p>
-  </div>
-
-  <section class="abstract">
-    <div class="intro"><span class="eyebrow">Abstract</span><h2>Ambiguity, not just noise</h2></div>
-    <p>Facial expression recognition (FER) remains a challenging task due to label ambiguity caused by the subjective nature of facial expressions and noisy samples. Additionally, class imbalance, which is common in real-world datasets, further complicates FER. Although many studies have shown impressive improvements, they typically address only one of these issues, leading to suboptimal results. To tackle both challenges simultaneously, we propose a novel framework called Navigating Label Ambiguity (NLA), which is robust under real-world conditions. The motivation behind NLA is that dynamically estimating and emphasizing ambiguous samples at each iteration helps mitigate noise and class imbalance by reducing the model's bias toward majority classes. To achieve this, NLA consists of two main components: Noise-aware Adaptive Weighting (NAW) and consistency regularization. Specifically, NAW adaptively assigns higher importance to ambiguous samples and lower importance to noisy ones, based on the correlation between the intermediate prediction scores for the ground truth and the nearest negative. Moreover, we incorporate a regularization term to ensure consistent latent distributions. Consequently, NLA enables the model to progressively focus on more challenging ambiguous samples, which primarily belong to the minority class, in the later stages of training. Extensive experiments demonstrate that NLA outperforms existing methods in both overall and mean accuracy, confirming its robustness against noise and class imbalance.</p>
-  </section>
-
   <section id="demo">
     <div class="intro">
       <span class="eyebrow">Demo</span>
@@ -211,6 +201,17 @@ footer a { color: inherit; }
       <p class="cap" id="clipcap"></p>
     </div>
   </section>
+
+  <div class="deck teaser" style="margin-block: 8px 28px">
+    <video src="static/video/teaser.mp4" poster="static/video/teaser.jpg" autoplay muted loop playsinline></video>
+    <p class="cap">Sample ambiguity from two scores. When a prediction is right, a clean sample has a ground-truth (GT) score far above its nearest negative (NN); an ambiguous one has the two scores close together. When it is wrong, a noisy sample puts the NN far above the GT.</p>
+  </div>
+
+  <section class="abstract">
+    <div class="intro"><span class="eyebrow">Abstract</span><h2>Ambiguity, not just noise</h2></div>
+    <p>Facial expression recognition (FER) remains a challenging task due to label ambiguity caused by the subjective nature of facial expressions and noisy samples. Additionally, class imbalance, which is common in real-world datasets, further complicates FER. Although many studies have shown impressive improvements, they typically address only one of these issues, leading to suboptimal results. To tackle both challenges simultaneously, we propose a novel framework called Navigating Label Ambiguity (NLA), which is robust under real-world conditions. The motivation behind NLA is that dynamically estimating and emphasizing ambiguous samples at each iteration helps mitigate noise and class imbalance by reducing the model's bias toward majority classes. To achieve this, NLA consists of two main components: Noise-aware Adaptive Weighting (NAW) and consistency regularization. Specifically, NAW adaptively assigns higher importance to ambiguous samples and lower importance to noisy ones, based on the correlation between the intermediate prediction scores for the ground truth and the nearest negative. Moreover, we incorporate a regularization term to ensure consistent latent distributions. Consequently, NLA enables the model to progressively focus on more challenging ambiguous samples, which primarily belong to the minority class, in the later stages of training. Extensive experiments demonstrate that NLA outperforms existing methods in both overall and mean accuracy, confirming its robustness against noise and class imbalance.</p>
+  </section>
+
 
   <section>
     <div class="intro"><span class="eyebrow">Method</span><h2>Noise-aware adaptive weighting</h2>
