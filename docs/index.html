@@ -21,7 +21,7 @@
   --f-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
   --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
   --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
-  --container: 1180px; --measure: 70ch;
+  --container: 1040px; --measure: 70ch;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --bg: #0f1214; --surface: #171b1e; --ink: #e9ecea; --muted: #9ba3a8; --line: #2a3034; color-scheme: dark; }
@@ -70,6 +70,14 @@ section { padding-block: clamp(40px, 6vw, 64px); border-top: 1px solid var(--lin
 .deck.light img { background: #fff; border-radius: 6px; }
 .cap { color: var(--deck-muted); font: 400 0.84rem/1.5 var(--f-mono); padding: 0 4px; }
 figure { margin: 0; display: grid; gap: 10px; }
+/* figures sit at a reading size, not edge to edge; wide ones may use .wide */
+figure, .teaser { width: 100%; max-width: 820px; justify-self: center; margin-inline: auto; }
+figure.wide { max-width: none; }
+figure.small { max-width: 680px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.pair figure { max-width: none; }
+@media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.deck.light { padding: 10px; }
 figcaption { color: var(--muted); font: 400 0.86rem/1.55 var(--f-mono); max-width: 110ch; }
 
 /* abstract */
@@ -165,7 +173,7 @@ footer a { color: inherit; }
     </div>
   </header>
 
-  <div class="deck" style="margin-bottom: 28px">
+  <div class="deck teaser" style="margin-bottom: 28px">
     <video src="static/video/teaser.mp4" poster="static/video/teaser.jpg" autoplay muted loop playsinline></video>
     <p class="cap">Sample ambiguity from two scores. When a prediction is right, a clean sample has a ground-truth (GT) score far above its nearest negative (NN); an ambiguous one has the two scores close together. When it is wrong, a noisy sample puts the NN far above the GT.</p>
   </div>
@@ -207,14 +215,14 @@ footer a { color: inherit; }
   <section>
     <div class="intro"><span class="eyebrow">Method</span><h2>Noise-aware adaptive weighting</h2>
       <p class="muted">NLA trains a single backbone with a re-weighted cross-entropy and a consistency term between an image and its horizontal flip.</p></div>
-    <figure><div class="deck light"><img src="static/img/framework.png" alt="NLA framework" loading="lazy"></div>
+    <figure class="wide"><div class="deck light"><img src="static/img/framework.png" alt="NLA framework" loading="lazy"></div>
       <figcaption>NAW assigns each sample a weight from a Gaussian kernel over its GT and NN scores; consistency regularization aligns the predictions of original and flipped images with Jensen–Shannon divergence.</figcaption></figure>
     <div class="cards">
       <div class="card"><span class="k">01 · Estimate</span><h3>Ambiguity from two scores</h3><p>The GT score and the nearest-negative score place every sample as clean, ambiguous, or noisy, without extra networks or clean subsets.</p></div>
       <div class="card"><span class="k">02 · Weight</span><h3>Two Gaussian kernels</h3><p>Separate kernels for true and false predictions give ambiguous samples the largest weight and suppress likely-noisy ones. A covariance scheduler reshapes the kernel as training goes on.</p></div>
       <div class="card"><span class="k">03 · Regularize</span><h3>Flip consistency</h3><p>Jensen–Shannon divergence between an image and its flip keeps the per-sample scores, and therefore the weights, stable across iterations.</p></div>
     </div>
-    <figure><div class="deck light"><img src="static/img/naw_effect.png" alt="Effect of NAW on clean, ambiguous and noisy samples" loading="lazy"></div>
+    <figure class="small"><div class="deck light"><img src="static/img/naw_effect.png" alt="Effect of NAW on clean, ambiguous and noisy samples" loading="lazy"></div>
       <figcaption>How NAW moves samples during training, (a) when the prediction is true and (b) when it is false.</figcaption></figure>
   </section>
 
@@ -268,15 +276,17 @@ footer a { color: inherit; }
       <p class="muted">Early in training the majority classes get the highest weights. As training proceeds, NAW raises the weights of ambiguous minority-class samples while keeping the majority classes, and minority-class accuracy keeps rising after the baseline saturates.</p></div>
     <figure><div class="deck light"><img src="static/img/naw_dist.png" alt="Distribution of NAW weights per class over training" loading="lazy"></div>
       <figcaption>Per-class distribution of the NAW weight w* across epochs (Ne: Neutral, Ha: Happiness, Sa: Sadness, Su: Surprise, An: Anger, Di: Disgust, Fe: Fear).</figcaption></figure>
+    <div class="pair">
     <figure><div class="deck light"><img src="static/img/accuracy_curves.png" alt="Test accuracy over epochs for majority and minority classes" loading="lazy"></div>
       <figcaption>Test accuracy over epochs on RAF-DB for (a) majority and (b) minority classes.</figcaption></figure>
     <figure><div class="deck light"><img src="static/img/qualitative.png" alt="Ambiguous samples: baseline versus NLA" loading="lazy"></div>
-      <figcaption>Ambiguous RAF-DB samples misclassified by the baseline: the baseline gives the GT (green) and the NN (red) similar scores, while NLA predicts the GT with a large margin.</figcaption></figure>
+      <figcaption>Ambiguous samples the baseline gets wrong: it gives the GT (green) and NN (red) similar scores, while NLA predicts the GT with a large margin.</figcaption></figure>
+    </div>
   </section>
 
   <section>
     <div class="intro"><span class="eyebrow">Follow-up</span><h2>From images to video</h2></div>
-    <p class="prose">NLA is also the image backbone of <a href="https://github.com/jungyu0413/V-NAW">V-NAW</a>, which extends noise-aware adaptive weighting to video clips and placed 5th in the expression recognition track of the 8th ABAW Challenge at CVPR 2025.</p>
+    <div class="prose"><p>NLA is also the image backbone of <a href="https://jungyu0413.github.io/V-NAW/">V-NAW</a>, which extends noise-aware adaptive weighting to video clips and placed 5th in the expression recognition track of the 8th ABAW Challenge at CVPR 2025.</p></div>
   </section>
 
   <section id="bibtex">
