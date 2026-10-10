@@ -7,7 +7,7 @@
 <meta name="description" content="NLA re-weights every training sample by how ambiguous it looks, so a single ResNet-18 handles label noise and class imbalance in facial expression recognition. AAAI 2025.">
 <meta property="og:title" content="Navigating Label Ambiguity for Facial Expression Recognition in the Wild (AAAI 2025)">
 <meta property="og:description" content="Noise-aware adaptive weighting for facial expression recognition under label noise and class imbalance.">
-<meta property="og:image" content="https://jungyu0413.github.io/NLA/static/video/teaser.jpg">
+<meta property="og:image" content="https://jungyu0413.github.io/NLA/static/img/framework.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -124,8 +124,12 @@ figcaption { color: var(--muted); font: 400 0.86rem/1.55 var(--f-mono); max-widt
 /* tables */
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 table { border-collapse: collapse; width: 100%; font: 500 0.9rem/1.3 var(--f-display); font-variant-numeric: tabular-nums; }
-th, td { padding: 10px 12px; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--line); }
-th:first-child, td:first-child { text-align: left; }
+/* label columns read left to right, numbers line up on the right edge */
+th, td { padding: 10px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+table.lab1 :is(th, td):nth-child(1), table.lab2 :is(th, td):nth-child(-n+2) { text-align: left; }
+/* label columns shrink to their content so the number columns share the rest evenly */
+table.lab1 :is(th, td):nth-child(1), table.lab2 :is(th, td):nth-child(-n+2) { width: 1%; padding-right: 28px; }
+table.chk2 :is(th, td):nth-child(-n+2) { text-align: center; width: 52px; }
 thead th { font: 600 0.72rem/1.2 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 tbody tr:last-child td { border-bottom: 0; }
 tr.ours td { background: color-mix(in srgb, var(--clean) 14%, transparent); font-weight: 700; }
@@ -205,11 +209,6 @@ footer a { color: inherit; }
     </div>
   </section>
 
-  <div class="deck teaser" style="margin-block: 8px 28px">
-    <video src="static/video/teaser.mp4" poster="static/video/teaser.jpg" autoplay muted loop playsinline></video>
-    <p class="cap">Sample ambiguity from two scores. When a prediction is right, a clean sample has a ground-truth (GT) score far above its nearest negative (NN); an ambiguous one has the two scores close together. When it is wrong, a noisy sample puts the NN far above the GT.</p>
-  </div>
-
   <section class="abstract">
     <div class="intro"><span class="eyebrow">Abstract</span><h2>Ambiguity, not just noise</h2></div>
     <p>Facial expression recognition (FER) remains a challenging task due to label ambiguity caused by the subjective nature of facial expressions and noisy samples. Additionally, class imbalance, which is common in real-world datasets, further complicates FER. Although many studies have shown impressive improvements, they typically address only one of these issues, leading to suboptimal results. To tackle both challenges simultaneously, we propose a novel framework called Navigating Label Ambiguity (NLA), which is robust under real-world conditions. The motivation behind NLA is that dynamically estimating and emphasizing ambiguous samples at each iteration helps mitigate noise and class imbalance by reducing the model's bias toward majority classes. To achieve this, NLA consists of two main components: Noise-aware Adaptive Weighting (NAW) and consistency regularization. Specifically, NAW adaptively assigns higher importance to ambiguous samples and lower importance to noisy ones, based on the correlation between the intermediate prediction scores for the ground truth and the nearest negative. Moreover, we incorporate a regularization term to ensure consistent latent distributions. Consequently, NLA enables the model to progressively focus on more challenging ambiguous samples, which primarily belong to the minority class, in the later stages of training. Extensive experiments demonstrate that NLA outperforms existing methods in both overall and mean accuracy, confirming its robustness against noise and class imbalance.</p>
@@ -226,8 +225,6 @@ footer a { color: inherit; }
       <div class="card"><span class="k">02 · Weight</span><h3>Two Gaussian kernels</h3><p>Separate kernels for true and false predictions give ambiguous samples the largest weight and suppress likely-noisy ones. A covariance scheduler reshapes the kernel as training goes on.</p></div>
       <div class="card"><span class="k">03 · Regularize</span><h3>Flip consistency</h3><p>Jensen–Shannon divergence between an image and its flip keeps the per-sample scores, and therefore the weights, stable across iterations.</p></div>
     </div>
-    <figure class="small"><div class="deck light"><img src="static/img/naw_effect.png" alt="Effect of NAW on clean, ambiguous and noisy samples" loading="lazy"></div>
-      <figcaption>How NAW moves samples during training, (a) when the prediction is true and (b) when it is false.</figcaption></figure>
   </section>
 
   <section>
@@ -239,7 +236,7 @@ footer a { color: inherit; }
       <div class="stat"><b>70.27</b><span>RAF-DB Fear accuracy (%), +4.0 over MEK</span></div>
       <div class="stat"><b>67.06</b><span>AffectNet 7-class accuracy (%)</span></div>
     </div>
-    <div class="tablewrap"><table>
+    <div class="tablewrap"><table class="lab2">
       <thead><tr><th>RAF-DB</th><th>Venue</th><th>Overall</th><th>Mean</th><th>Happiness</th><th>Neutral</th><th>Sadness</th><th>Surprise</th><th>Disgust</th><th>Anger</th><th>Fear</th></tr></thead>
       <tbody>
         <tr><td>Baseline</td><td>–</td><td>87.42</td><td>78.53</td><td>95.44</td><td>88.53</td><td>85.56</td><td>83.59</td><td>58.75</td><td>78.40</td><td>59.46</td></tr>
@@ -251,7 +248,7 @@ footer a { color: inherit; }
         <tr class="ours"><td>NLA (ours)</td><td>AAAI'25</td><td>89.93</td><td>83.87</td><td>95.70</td><td>88.97</td><td>90.38</td><td>87.23</td><td>70.00</td><td>84.57</td><td>70.27</td></tr>
       </tbody></table></div>
     <details><summary>Robustness to label noise and class imbalance</summary>
-      <div class="tablewrap"><table>
+      <div class="tablewrap"><table class="lab2">
         <thead><tr><th>Noise</th><th>Method</th><th>RAF-DB</th><th>AffectNet</th><th>FERPlus</th></tr></thead>
         <tbody>
           <tr><td>10%</td><td>LA-Net</td><td>88.75</td><td>62.85</td><td>88.02</td></tr>
@@ -261,8 +258,8 @@ footer a { color: inherit; }
           <tr><td>30%</td><td>LA-Net</td><td>85.33</td><td>60.82</td><td>86.01</td></tr>
           <tr class="ours"><td>30%</td><td>NLA (ours)</td><td>86.71</td><td>62.48</td><td>86.97</td></tr>
         </tbody></table></div>
-      <div class="tablewrap" style="margin-top: 12px"><table>
-        <thead><tr><th>Imbalance factor (RAF-DB)</th><th>Method</th><th>Overall</th><th>Mean</th></tr></thead>
+      <div class="tablewrap" style="margin-top: 12px"><table class="lab2">
+        <thead><tr><th>Imbalance</th><th>Method</th><th>Overall</th><th>Mean</th></tr></thead>
         <tbody>
           <tr><td>50</td><td>MEK</td><td>87.65</td><td>77.11</td></tr>
           <tr class="ours"><td>50</td><td>NLA (ours)</td><td>87.97</td><td>78.05</td></tr>
@@ -271,21 +268,8 @@ footer a { color: inherit; }
           <tr><td>150</td><td>MEK</td><td>85.20</td><td>70.33</td></tr>
           <tr class="ours"><td>150</td><td>NLA (ours)</td><td>86.34</td><td>70.49</td></tr>
         </tbody></table></div>
-      <p class="minor" style="margin-top: 10px">NLA rows are the mean over five random seeds. Full tables, including SCN, RUL, EAC, BBN and the baseline, are in the paper.</p>
+      <p class="minor" style="margin-top: 10px">Noise: share of RAF-DB, AffectNet and FERPlus training labels flipped at random. Imbalance: ratio of the largest to the smallest class on RAF-DB. NLA rows are the mean over five random seeds. Full tables, including SCN, RUL, EAC, BBN and the baseline, are in the paper.</p>
     </details>
-  </section>
-
-  <section>
-    <div class="intro"><span class="eyebrow">Analysis</span><h2>Attention shifts to the minority classes</h2>
-      <p class="muted">Early in training the majority classes get the highest weights. As training proceeds, NAW raises the weights of ambiguous minority-class samples while keeping the majority classes, and minority-class accuracy keeps rising after the baseline saturates.</p></div>
-    <figure><div class="deck light"><img src="static/img/naw_dist.png" alt="Distribution of NAW weights per class over training" loading="lazy"></div>
-      <figcaption>Per-class distribution of the NAW weight w* across epochs (Ne: Neutral, Ha: Happiness, Sa: Sadness, Su: Surprise, An: Anger, Di: Disgust, Fe: Fear).</figcaption></figure>
-    <div class="pair">
-    <figure><div class="deck light"><img src="static/img/accuracy_curves.png" alt="Test accuracy over epochs for majority and minority classes" loading="lazy"></div>
-      <figcaption>Test accuracy over epochs on RAF-DB for (a) majority and (b) minority classes.</figcaption></figure>
-    <figure><div class="deck light"><img src="static/img/qualitative.png" alt="Ambiguous samples: baseline versus NLA" loading="lazy"></div>
-      <figcaption>Ambiguous samples the baseline gets wrong: it gives the GT (green) and NN (red) similar scores, while NLA predicts the GT with a large margin.</figcaption></figure>
-    </div>
   </section>
 
   <section>
