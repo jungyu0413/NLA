@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NLA: Navigating Label Ambiguity for FER</title>
+<meta name="description" content="NLA re-weights every training sample by how ambiguous it looks, so a single ResNet-18 handles label noise and class imbalance in facial expression recognition. AAAI 2025.">
+<meta property="og:title" content="Navigating Label Ambiguity for Facial Expression Recognition in the Wild (AAAI 2025)">
+<meta property="og:description" content="Noise-aware adaptive weighting for facial expression recognition under label noise and class imbalance.">
+<meta property="og:image" content="https://jungyu0413.github.io/NLA/static/video/teaser.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Same system as the MoRE page: one 1180px container, display grotesk + text serif, dark "decks" for media.
+   Colours come from the paper's Fig. 1 legend (clean / ambiguous / noisy). */
+:root {
+  --bg: #f6f6f3; --surface: #ffffff; --ink: #16191d; --muted: #5b626b; --line: #dcdcd6;
+  --deck: #101316; --deck-2: #1b2024; --deck-line: #2c3338; --deck-ink: #eef0ee; --deck-muted: #9aa3a8;
+  --clean: #a7b926; --ambig: #f2b705; --noisy: #e15224; --accent: #e15224;
+  --f-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --container: 1180px; --measure: 70ch;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f1214; --surface: #171b1e; --ink: #e9ecea; --muted: #9ba3a8; --line: #2a3034; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0f1214; --surface: #171b1e; --ink: #e9ecea; --muted: #9ba3a8; --line: #2a3034; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 1.075rem/1.62 var(--f-body); margin: 0; }
+.page { max-width: var(--container); margin-inline: auto; padding-inline: 24px; }
+@media (max-width: 520px) { .page { padding-inline: 16px; } }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.12; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.05rem); font-weight: 700; }
+h3 { font-size: 1.12rem; font-weight: 600; }
+p { margin: 0; text-wrap: pretty; }
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code { font-family: var(--f-mono); font-size: 0.88em; }
+.eyebrow { font: 600 0.74rem/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+section { padding-block: clamp(40px, 6vw, 64px); border-top: 1px solid var(--line); display: grid; gap: clamp(18px, 2.5vw, 26px); }
+.intro { display: grid; gap: 12px; max-width: 80ch; }
+.prose { max-width: var(--measure); display: grid; gap: 14px; }
+.muted { color: var(--muted); }
+
+/* hero */
+.hero { padding-block: 56px 32px; display: grid; gap: 18px; }
+.hero h1 { font-size: clamp(1.75rem, 1.1rem + 2.5vw, 3rem); font-weight: 700; max-width: 1000px; }
+.hero .sub { font-family: var(--f-display); font-size: clamp(1.05rem, 0.98rem + 0.4vw, 1.28rem); line-height: 1.5; color: var(--muted); max-width: 64ch; }
+.hero .sub b { color: var(--ink); }
+.venue { display: inline-flex; gap: 8px; align-items: center; font: 600 0.78rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; justify-self: start; background: var(--surface); }
+.venue i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.authors { display: flex; flex-wrap: wrap; gap: 4px 26px; font: 600 1.08rem/1.4 var(--f-display); }
+.authors a { text-decoration: none; border-bottom: 2px solid transparent; }
+.authors a:hover { border-bottom-color: var(--accent); }
+.authors sup, .affil sup { font: 600 0.72rem/1 var(--f-mono); color: var(--muted); margin-left: 2px; }
+.affil { display: flex; flex-wrap: wrap; gap: 4px 22px; color: var(--muted); font: 500 0.95rem/1.4 var(--f-display); }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: 600 0.9rem/1 var(--f-display); text-decoration: none; cursor: pointer; }
+.btn:hover { border-color: var(--ink); }
+.btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+/* decks: dark media frames, identical in both themes */
+.deck { background: var(--deck); color: var(--deck-ink); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+.deck video, .deck img { width: 100%; display: block; border-radius: 10px; background: #000; }
+.deck.light { background: #fff; }
+.deck.light img { background: #fff; border-radius: 6px; }
+.cap { color: var(--deck-muted); font: 400 0.84rem/1.5 var(--f-mono); padding: 0 4px; }
+figure { margin: 0; display: grid; gap: 10px; }
+figcaption { color: var(--muted); font: 400 0.86rem/1.55 var(--f-mono); max-width: 110ch; }
+
+/* abstract */
+@media (min-width: 760px) { .abstract p { text-align: justify; } }
+
+/* demo */
+.demo { display: grid; gap: 14px; }
+.demo-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 14px; align-items: stretch; }
+@media (max-width: 900px) { .demo-grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--deck-2); border: 1px solid var(--deck-line); border-radius: 12px; padding: 16px; display: grid; gap: 14px; align-content: start; }
+.panel .lab { font: 600 0.7rem/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--deck-muted); }
+.bars { display: grid; gap: 7px; }
+.bar { display: grid; grid-template-columns: 82px minmax(0, 1fr) 44px; gap: 10px; align-items: center; font: 500 0.82rem/1 var(--f-mono); color: var(--deck-ink); }
+.bar .track { display: block; height: 12px; border-radius: 6px; background: #252b30; overflow: hidden; }
+.bar .fill { display: block; height: 100%; width: 0; border-radius: 6px; transition: width 80ms linear; }
+.bar .pct { text-align: right; color: var(--deck-muted); font-variant-numeric: tabular-nums; }
+.bar.top { color: #fff; }
+.bar.top .pct { color: #fff; }
+.amb { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: center; }
+.amb svg { width: 170px; height: 170px; display: block; }
+.amb-read { display: grid; gap: 6px; font: 500 0.82rem/1.45 var(--f-mono); color: var(--deck-muted); }
+.amb-read b { color: var(--deck-ink); font-weight: 600; }
+.state { display: inline-flex; align-items: center; gap: 8px; font: 600 0.78rem/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: 999px; padding: 6px 10px; border: 1px solid var(--deck-line); color: var(--deck-ink); justify-self: start; }
+.state i { width: 9px; height: 9px; border-radius: 50%; background: var(--deck-muted); }
+.clips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 640px) { .clips { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.clips button { all: unset; cursor: pointer; display: grid; gap: 6px; border-radius: 10px; padding: 6px; border: 1px solid var(--deck-line); background: var(--deck-2); }
+.clips button img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; display: block; }
+.clips button span { font: 600 0.78rem/1.2 var(--f-display); color: var(--deck-ink); text-align: center; }
+.clips button[aria-pressed="true"] { border-color: var(--deck-ink); box-shadow: 0 0 0 1px var(--deck-ink) inset; }
+.clips button:focus-visible { outline: 3px solid var(--accent); }
+
+/* method cards */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.card .k { font: 600 0.72rem/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.card p { font-size: 0.98rem; }
+
+/* tables */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font: 500 0.9rem/1.3 var(--f-display); font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 12px; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+thead th { font: 600 0.72rem/1.2 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+tr.ours td { background: color-mix(in srgb, var(--clean) 14%, transparent); font-weight: 700; }
+.minor { color: var(--muted); font-size: 0.85em; }
+details { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; }
+details summary { cursor: pointer; font: 600 0.98rem/1.3 var(--f-display); }
+details[open] summary { margin-bottom: 14px; }
+details .tablewrap { border: 0; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; }
+.stat b { font: 700 1.9rem/1 var(--f-display); }
+.stat span { color: var(--muted); font: 500 0.84rem/1.35 var(--f-display); }
+
+/* bibtex */
+pre.bib { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; font: 400 0.86rem/1.55 var(--f-mono); margin: 0; }
+footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var(--muted); font: 400 0.84rem/1.6 var(--f-mono); display: grid; gap: 8px; }
+footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <span class="venue"><i></i>AAAI 2025</span>
+    <h1>Navigating Label Ambiguity for Facial Expression Recognition in the Wild</h1>
+    <p class="sub"><b>NLA</b> re-weights every training sample by how ambiguous it looks, so one ResNet-18 handles <b>label noise</b> and <b>class imbalance</b> at the same time.</p>
+    <div class="authors">
+      <a href="https://jungyu0413.github.io/">JunGyu Lee<sup>1,2,*</sup></a>
+      <span>Yeji Choi<sup>1,3,*</sup></span>
+      <a href="https://scholar.google.com/citations?user=F5z0unQAAAAJ">Haksub Kim<sup>1</sup></a>
+      <a href="https://sites.google.com/view/ijkim">Ig-Jae Kim<sup>1,2</sup></a>
+      <a href="https://vig.kist.re.kr">Gi Pyo Nam<sup>1,2</sup></a>
+    </div>
+    <div class="affil">
+      <span><sup>1</sup>Korea Institute of Science and Technology</span>
+      <span><sup>2</sup>AI-Robotics, KIST School, UST</span>
+      <span><sup>3</sup>Yonsei University</span>
+      <span><sup>*</sup>Equal contribution</span>
+    </div>
+    <div class="links">
+      <a class="btn" href="https://ojs.aaai.org/index.php/AAAI/article/view/32476"><span class="dot"></span>Paper</a>
+      <a class="btn" href="https://arxiv.org/abs/2502.09993">arXiv</a>
+      <a class="btn" href="https://github.com/jungyu0413/NLA">Code</a>
+      <a class="btn" href="https://drive.google.com/file/d/12NY75DwMUnXFbRYDQso4eXIxLAV2PP63/view?usp=drive_link">Weights</a>
+      <a class="btn" href="#demo">Demo</a>
+      <a class="btn" href="#bibtex">BibTeX</a>
+    </div>
+  </header>
+
+  <div class="deck" style="margin-bottom: 28px">
+    <video src="static/video/teaser.mp4" poster="static/video/teaser.jpg" autoplay muted loop playsinline></video>
+    <p class="cap">Sample ambiguity from two scores. When a prediction is right, a clean sample has a ground-truth (GT) score far above its nearest negative (NN); an ambiguous one has the two scores close together. When it is wrong, a noisy sample puts the NN far above the GT.</p>
+  </div>
+
+  <section class="abstract">
+    <div class="intro"><span class="eyebrow">Abstract</span><h2>Ambiguity, not just noise</h2></div>
+    <p>Facial expression recognition (FER) remains a challenging task due to label ambiguity caused by the subjective nature of facial expressions and noisy samples. Additionally, class imbalance, which is common in real-world datasets, further complicates FER. Although many studies have shown impressive improvements, they typically address only one of these issues, leading to suboptimal results. To tackle both challenges simultaneously, we propose a novel framework called Navigating Label Ambiguity (NLA), which is robust under real-world conditions. The motivation behind NLA is that dynamically estimating and emphasizing ambiguous samples at each iteration helps mitigate noise and class imbalance by reducing the model's bias toward majority classes. To achieve this, NLA consists of two main components: Noise-aware Adaptive Weighting (NAW) and consistency regularization. Specifically, NAW adaptively assigns higher importance to ambiguous samples and lower importance to noisy ones, based on the correlation between the intermediate prediction scores for the ground truth and the nearest negative. Moreover, we incorporate a regularization term to ensure consistent latent distributions. Consequently, NLA enables the model to progressively focus on more challenging ambiguous samples, which primarily belong to the minority class, in the later stages of training. Extensive experiments demonstrate that NLA outperforms existing methods in both overall and mean accuracy, confirming its robustness against noise and class imbalance.</p>
+  </section>
+
+  <section id="demo">
+    <div class="intro">
+      <span class="eyebrow">Demo</span>
+      <h2>The released model on video in the wild</h2>
+      <p class="muted">Every frame below was classified by the released NLA checkpoint (ResNet-18, trained on RAF-DB). Faces are found with YuNet, aligned on five landmarks, and the class probabilities are smoothed over time. The panel plots the top prediction against its runner-up, the same two-score view NLA uses during training.</p>
+    </div>
+    <div class="deck demo">
+      <div class="demo-grid">
+        <video id="dv" muted loop playsinline autoplay preload="auto"></video>
+        <div class="panel">
+          <span class="lab">Expression probabilities</span>
+          <div class="bars" id="bars"></div>
+          <span class="lab">Top-1 vs. runner-up</span>
+          <div class="amb">
+            <svg id="amb" viewBox="0 0 150 150" aria-label="Top-1 probability versus runner-up probability"></svg>
+            <div class="amb-read">
+              <span class="state" id="state"><i></i>no face</span>
+              <span>top-1 <b id="t1">–</b></span>
+              <span>runner-up <b id="t2">–</b></span>
+              <span>margin <b id="mg">–</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="clips" id="clips"></div>
+      <p class="cap" id="clipcap"></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="intro"><span class="eyebrow">Method</span><h2>Noise-aware adaptive weighting</h2>
+      <p class="muted">NLA trains a single backbone with a re-weighted cross-entropy and a consistency term between an image and its horizontal flip.</p></div>
+    <figure><div class="deck light"><img src="static/img/framework.png" alt="NLA framework" loading="lazy"></div>
+      <figcaption>NAW assigns each sample a weight from a Gaussian kernel over its GT and NN scores; consistency regularization aligns the predictions of original and flipped images with Jensen–Shannon divergence.</figcaption></figure>
+    <div class="cards">
+      <div class="card"><span class="k">01 · Estimate</span><h3>Ambiguity from two scores</h3><p>The GT score and the nearest-negative score place every sample as clean, ambiguous, or noisy, without extra networks or clean subsets.</p></div>
+      <div class="card"><span class="k">02 · Weight</span><h3>Two Gaussian kernels</h3><p>Separate kernels for true and false predictions give ambiguous samples the largest weight and suppress likely-noisy ones. A covariance scheduler reshapes the kernel as training goes on.</p></div>
+      <div class="card"><span class="k">03 · Regularize</span><h3>Flip consistency</h3><p>Jensen–Shannon divergence between an image and its flip keeps the per-sample scores, and therefore the weights, stable across iterations.</p></div>
+    </div>
+    <figure><div class="deck light"><img src="static/img/naw_effect.png" alt="Effect of NAW on clean, ambiguous and noisy samples" loading="lazy"></div>
+      <figcaption>How NAW moves samples during training, (a) when the prediction is true and (b) when it is false.</figcaption></figure>
+  </section>
+
+  <section>
+    <div class="intro"><span class="eyebrow">Results</span><h2>Better on the classes that are hard to collect</h2>
+      <p class="muted">All methods use a ResNet-18 pre-trained on MS-Celeb-1M. Numbers are from the paper.</p></div>
+    <div class="stats">
+      <div class="stat"><b>89.93</b><span>RAF-DB overall accuracy (%)</span></div>
+      <div class="stat"><b>83.87</b><span>RAF-DB mean accuracy (%)</span></div>
+      <div class="stat"><b>70.27</b><span>RAF-DB Fear accuracy (%), +4.0 over MEK</span></div>
+      <div class="stat"><b>67.06</b><span>AffectNet 7-class accuracy (%)</span></div>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>RAF-DB</th><th>Venue</th><th>Overall</th><th>Mean</th><th>Happiness</th><th>Neutral</th><th>Sadness</th><th>Surprise</th><th>Disgust</th><th>Anger</th><th>Fear</th></tr></thead>
+      <tbody>
+        <tr><td>Baseline</td><td>–</td><td>87.42</td><td>78.53</td><td>95.44</td><td>88.53</td><td>85.56</td><td>83.59</td><td>58.75</td><td>78.40</td><td>59.46</td></tr>
+        <tr><td>CB</td><td>CVPR'19</td><td>88.04</td><td>79.26</td><td>95.11</td><td>90.74</td><td>84.73</td><td>86.93</td><td>64.38</td><td>73.46</td><td>59.46</td></tr>
+        <tr><td>BBN</td><td>CVPR'20</td><td>87.39</td><td>78.19</td><td>94.59</td><td>91.62</td><td>84.94</td><td>84.80</td><td>61.88</td><td>77.78</td><td>52.70</td></tr>
+        <tr><td>RUL</td><td>NeurIPS'21</td><td>88.66</td><td>81.66</td><td>95.78</td><td>87.06</td><td>86.19</td><td>89.36</td><td>65.00</td><td>83.33</td><td>64.86</td></tr>
+        <tr><td>EAC</td><td>ECCV'22</td><td>89.05</td><td>81.09</td><td>95.27</td><td>88.97</td><td>90.17</td><td>87.84</td><td>61.25</td><td>83.33</td><td>60.81</td></tr>
+        <tr><td>MEK</td><td>NeurIPS'23</td><td>89.77</td><td>82.44</td><td>96.37</td><td>89.56</td><td>89.33</td><td>87.84</td><td>66.89</td><td>80.86</td><td>66.22</td></tr>
+        <tr class="ours"><td>NLA (ours)</td><td>AAAI'25</td><td>89.93</td><td>83.87</td><td>95.70</td><td>88.97</td><td>90.38</td><td>87.23</td><td>70.00</td><td>84.57</td><td>70.27</td></tr>
+      </tbody></table></div>
+    <details><summary>Robustness to label noise and class imbalance</summary>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Noise</th><th>Method</th><th>RAF-DB</th><th>AffectNet</th><th>FERPlus</th></tr></thead>
+        <tbody>
+          <tr><td>10%</td><td>LA-Net</td><td>88.75</td><td>62.85</td><td>88.02</td></tr>
+          <tr class="ours"><td>10%</td><td>NLA (ours)</td><td>88.83</td><td>63.52</td><td>88.20</td></tr>
+          <tr><td>20%</td><td>LA-Net</td><td>87.12</td><td>61.72</td><td>86.85</td></tr>
+          <tr class="ours"><td>20%</td><td>NLA (ours)</td><td>87.60</td><td>63.25</td><td>87.64</td></tr>
+          <tr><td>30%</td><td>LA-Net</td><td>85.33</td><td>60.82</td><td>86.01</td></tr>
+          <tr class="ours"><td>30%</td><td>NLA (ours)</td><td>86.71</td><td>62.48</td><td>86.97</td></tr>
+        </tbody></table></div>
+      <div class="tablewrap" style="margin-top: 12px"><table>
+        <thead><tr><th>Imbalance factor (RAF-DB)</th><th>Method</th><th>Overall</th><th>Mean</th></tr></thead>
+        <tbody>
+          <tr><td>50</td><td>MEK</td><td>87.65</td><td>77.11</td></tr>
+          <tr class="ours"><td>50</td><td>NLA (ours)</td><td>87.97</td><td>78.05</td></tr>
+          <tr><td>100</td><td>MEK</td><td>86.47</td><td>73.06</td></tr>
+          <tr class="ours"><td>100</td><td>NLA (ours)</td><td>87.98</td><td>73.34</td></tr>
+          <tr><td>150</td><td>MEK</td><td>85.20</td><td>70.33</td></tr>
+          <tr class="ours"><td>150</td><td>NLA (ours)</td><td>86.34</td><td>70.49</td></tr>
+        </tbody></table></div>
+      <p class="minor" style="margin-top: 10px">NLA rows are the mean over five random seeds. Full tables, including SCN, RUL, EAC, BBN and the baseline, are in the paper.</p>
+    </details>
+  </section>
+
+  <section>
+    <div class="intro"><span class="eyebrow">Analysis</span><h2>Attention shifts to the minority classes</h2>
+      <p class="muted">Early in training the majority classes get the highest weights. As training proceeds, NAW raises the weights of ambiguous minority-class samples while keeping the majority classes, and minority-class accuracy keeps rising after the baseline saturates.</p></div>
+    <figure><div class="deck light"><img src="static/img/naw_dist.png" alt="Distribution of NAW weights per class over training" loading="lazy"></div>
+      <figcaption>Per-class distribution of the NAW weight w* across epochs (Ne: Neutral, Ha: Happiness, Sa: Sadness, Su: Surprise, An: Anger, Di: Disgust, Fe: Fear).</figcaption></figure>
+    <figure><div class="deck light"><img src="static/img/accuracy_curves.png" alt="Test accuracy over epochs for majority and minority classes" loading="lazy"></div>
+      <figcaption>Test accuracy over epochs on RAF-DB for (a) majority and (b) minority classes.</figcaption></figure>
+    <figure><div class="deck light"><img src="static/img/qualitative.png" alt="Ambiguous samples: baseline versus NLA" loading="lazy"></div>
+      <figcaption>Ambiguous RAF-DB samples misclassified by the baseline: the baseline gives the GT (green) and the NN (red) similar scores, while NLA predicts the GT with a large margin.</figcaption></figure>
+  </section>
+
+  <section>
+    <div class="intro"><span class="eyebrow">Follow-up</span><h2>From images to video</h2></div>
+    <p class="prose">NLA is also the image backbone of <a href="https://github.com/jungyu0413/V-NAW">V-NAW</a>, which extends noise-aware adaptive weighting to video clips and placed 5th in the expression recognition track of the 8th ABAW Challenge at CVPR 2025.</p>
+  </section>
+
+  <section id="bibtex">
+    <div class="intro"><span class="eyebrow">Cite</span><h2>BibTeX</h2></div>
+    <pre class="bib" id="bib">@inproceedings{lee2025navigating,
+  title     = {Navigating Label Ambiguity for Facial Expression Recognition in the Wild},
+  author    = {Lee, JunGyu and Choi, Yeji and Kim, Haksub and Kim, Ig-Jae and Nam, Gi Pyo},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {39},
+  number    = {4},
+  pages     = {4517--4525},
+  year      = {2025},
+  doi       = {10.1609/aaai.v39i4.32476}
+}</pre>
+    <div><button class="btn" type="button" id="copyBib">Copy BibTeX</button></div>
+  </section>
+
+  <footer>
+    <p>This research was supported by the Field-oriented Technology Development Project for Customs Administration through the National Research Foundation of Korea (NRF) funded by the Ministry of Science &amp; ICT and Korea Customs Service (2022M3I1A1095154), and by the KIST Institutional Program (Project No. 2E33001).</p>
+    <p>Demo footage: <a href="https://mixkit.co/free-stock-video/surprised-man-with-hands-on-head-4508/">4508</a>, <a href="https://mixkit.co/free-stock-video/man-laughing-head-on-closeup-4760/">4760</a>, <a href="https://mixkit.co/free-stock-video/sad-businessman-talking-head-on-4634/">4634</a>, <a href="https://mixkit.co/free-stock-video/face-of-a-very-surprised-young-woman-43832/">43832</a> and <a href="https://mixkit.co/free-stock-video/man-screaming-desperately-42242/">42242</a> from Mixkit (Free License). Face detection: <a href="https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet">YuNet</a> (OpenCV Zoo). The people shown are actors; the labels describe only the model's output on these clips.</p>
+    <p>© 2025 the authors · <a href="https://jungyu0413.github.io/">jungyu0413.github.io</a></p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  // order and colours match the overlays burned into the demo videos
+  const CLASSES = ['Surprise', 'Fear', 'Disgust', 'Happiness', 'Sadness', 'Anger', 'Neutral'];
+  const SHOW = ['Neutral', 'Happiness', 'Sadness', 'Surprise', 'Fear', 'Disgust', 'Anger'];
+  const COLOR = { Surprise: '#ff9f1c', Fear: '#9b5de5', Disgust: '#2ec4b6', Happiness: '#ffc72c', Sadness: '#3a86ff', Anger: '#ef476f', Neutral: '#a0a6b0' };
+  const CLIPS = [
+    { id: 'surprise', name: 'Surprise', cap: 'A clear, held expression: the model stays confident (large margin between the top prediction and the runner-up).' },
+    { id: 'surprise_to_joy', name: 'Surprise → joy', cap: 'The expression changes within three seconds; the probabilities follow it from Surprise to Happiness.' },
+    { id: 'happiness', name: 'Happiness', cap: 'A laugh seen head-on: the point sits in the confident corner almost the whole time.' },
+    { id: 'sadness', name: 'Sadness', cap: 'A subtle, sustained expression while talking; Sadness dominates with some mass on Disgust.' },
+    { id: 'ambiguous', name: 'Ambiguous', cap: 'A scream is hard to name even for people. The probability mass spreads over Sadness, Anger and Happiness and the point moves toward the ambiguous region, which is exactly the kind of sample NAW emphasises during training.' },
+  ];
+
+  // probability bars
+  const bars = $('#bars'); const rows = {};
+  SHOW.forEach((c) => {
+    const r = document.createElement('div'); r.className = 'bar';
+    r.innerHTML = `<span>${c}</span><span class="track"><span class="fill" style="background:${COLOR[c]}"></span></span><span class="pct">–</span>`;
+    bars.appendChild(r); rows[c] = { el: r, fill: r.querySelector('.fill'), pct: r.querySelector('.pct') };
+  });
+
+  // top-1 vs runner-up plot: x = top-1, y = runner-up, feasible region is the triangle (0,0)-(1,0)-(0.5,0.5)
+  const svg = $('#amb'); const NS = 'http://www.w3.org/2000/svg';
+  const P = (x, y) => [14 + x * 126, 136 - y * 252];   // y only reaches 0.5
+  const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.appendChild(e); return e; };
+  const tri = [P(0, 0), P(1, 0), P(0.5, 0.5)].map((p) => p.join(',')).join(' ');
+  el('polygon', { points: tri, fill: '#1f252a', stroke: '#3a4248', 'stroke-width': 1 });
+  el('polygon', { points: [P(0.75, 0), P(1, 0), P(0.875, 0.125)].map((p) => p.join(',')).join(' '), fill: '#a7b926', opacity: 0.22 });
+  el('polygon', { points: [P(0.4, 0.33), P(0.6, 0.33), P(0.5, 0.5)].map((p) => p.join(',')).join(' '), fill: '#f2b705', opacity: 0.22 });
+  el('line', { x1: P(0, 0)[0], y1: P(0, 0)[1], x2: P(1, 0)[0], y2: P(1, 0)[1], stroke: '#9aa3a8', 'stroke-width': 1.2 });
+  el('line', { x1: P(0, 0)[0], y1: P(0, 0)[1], x2: P(0, 0.5)[0], y2: P(0, 0.5)[1], stroke: '#9aa3a8', 'stroke-width': 1.2 });
+  const txt = (x, y, s, a) => { const t = el('text', { x, y, fill: '#9aa3a8', 'font-size': 9, 'font-family': 'JetBrains Mono, monospace', 'text-anchor': a || 'middle' }); t.textContent = s; };
+  txt(P(1, 0)[0], 148, '1'); txt(P(0, 0)[0], 148, '0'); txt(P(0.5, 0)[0], 148, 'top-1'); txt(4, P(0, 0.5)[1] + 3, '.5', 'start');
+  txt(P(0.9, 0.03)[0], P(0.9, 0.03)[1] - 6, 'clear'); txt(P(0.5, 0.42)[0], P(0.5, 0.42)[1] - 10, 'ambiguous');
+  const trail = []; for (let i = 0; i < 18; i++) trail.push(el('circle', { r: 2.2, fill: '#eef0ee', opacity: 0 }));
+  const dot = el('circle', { r: 5.5, fill: '#eef0ee', stroke: '#0c0f11', 'stroke-width': 1.5, opacity: 0 });
+
+  const v = $('#dv'); let data = null; let last = -1; const hist = [];
+  function draw(i) {
+    if (!data || i === last) return; last = i;
+    const p = data.probs[Math.min(i, data.probs.length - 1)];
+    if (!p) {
+      SHOW.forEach((c) => { rows[c].fill.style.width = '0%'; rows[c].pct.textContent = '–'; rows[c].el.classList.remove('top'); });
+      $('#state').innerHTML = '<i></i>no face'; dot.setAttribute('opacity', 0); ['#t1', '#t2', '#mg'].forEach((s) => ($(s).textContent = '–'));
+      return;
+    }
+    const byName = {}; CLASSES.forEach((c, k) => (byName[c] = p[k]));
+    const order = CLASSES.map((c, k) => [c, p[k]]).sort((a, b) => b[1] - a[1]);
+    const [c1, p1] = order[0]; const [c2, p2] = order[1];
+    SHOW.forEach((c) => { const q = byName[c]; rows[c].fill.style.width = (q * 100).toFixed(1) + '%'; rows[c].pct.textContent = Math.round(q * 100) + '%'; rows[c].el.classList.toggle('top', c === c1); });
+    const m = p1 - p2;
+    const st = m > 0.5 ? ['clear', '#a7b926'] : m < 0.25 ? ['ambiguous', '#f2b705'] : ['moderate', '#9aa3a8'];
+    $('#state').innerHTML = `<i style="background:${st[1]}"></i>${st[0]}`;
+    $('#t1').textContent = `${c1} ${(p1 * 100).toFixed(0)}%`; $('#t2').textContent = `${c2} ${(p2 * 100).toFixed(0)}%`; $('#mg').textContent = m.toFixed(2);
+    const [x, y] = P(p1, p2);
+    hist.push([x, y]); if (hist.length > trail.length) hist.shift();
+    trail.forEach((t, k) => { const h = hist[hist.length - 1 - k]; if (!h) { t.setAttribute('opacity', 0); return; } t.setAttribute('cx', h[0]); t.setAttribute('cy', h[1]); t.setAttribute('opacity', (0.5 * (1 - k / trail.length)).toFixed(2)); });
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('fill', COLOR[c1]); dot.setAttribute('opacity', 1);
+  }
+  function tick() { if (data) draw(Math.floor(v.currentTime * data.fps + 1e-3)); }
+  if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+    const loop = (now, meta) => { if (data) draw(Math.floor(meta.mediaTime * data.fps + 1e-3)); v.requestVideoFrameCallback(loop); };
+    v.requestVideoFrameCallback(loop);
+  } else {
+    const raf = () => { tick(); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
+  }
+  v.addEventListener('seeked', tick);
+
+  const strip = $('#clips');
+  function select(c) {
+    strip.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === c.id)));
+    $('#clipcap').textContent = c.cap; data = null; last = -1; hist.length = 0;
+    fetch(`static/demo/${c.id}.json`).then((r) => r.json()).then((d) => { data = d; tick(); });
+    v.poster = `static/demo/${c.id}.jpg`; v.src = `static/demo/${c.id}.mp4`; v.play().catch(() => {});
+  }
+  CLIPS.forEach((c) => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.id = c.id;
+    b.innerHTML = `<img alt="" src="static/demo/${c.id}.jpg"><span>${c.name}</span>`;
+    b.addEventListener('click', () => select(c)); strip.appendChild(b);
+  });
+  select(CLIPS[0]);
+
+  $('#copyBib').addEventListener('click', () => {
+    const t = $('#bib').textContent; const done = () => ($('#copyBib').textContent = 'Copied');
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#bib')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('#copyBib').textContent = 'Selected — press Ctrl/⌘+C'; };
+    try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="https://jungyu0413.github.io/NLA/"><strong><code>Project Page</code></strong></a>
   <a href="https://ojs.aaai.org/index.php/AAAI/article/view/32476"><strong><code>AAAI Paper</code></strong></a>
   <a href="https://arxiv.org/abs/2502.09993"><strong><code>arXiv</code></strong></a>
   <a href="https://drive.google.com/file/d/12NY75DwMUnXFbRYDQso4eXIxLAV2PP63/view?usp=drive_link"><strong><code>Pretrained Weights</code></strong></a>
